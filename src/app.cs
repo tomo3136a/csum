@@ -57,6 +57,9 @@ namespace Program
         public bool Run()
         {
             var csum = new CheckSum();
+            if (opt_map.ContainsKey("-size")) {
+                csum.Size = Int32.Parse(opt_map["-size"]);
+            }
             foreach (var src in src_lst) csum.Load(src);
             if (csum.Run(run_mode)) return true;
             var msg = "Error: CheckSum("+run_mode+")";

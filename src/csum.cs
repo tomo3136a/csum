@@ -13,6 +13,8 @@ namespace Program
     public class CheckSum
     {
         List<string> srcs = new List<string>();
+        long size;
+        long cnt;
         long sum;
 
         //constructor
@@ -28,6 +30,8 @@ namespace Program
         /////////////////////////////////////////////////////////////////////
 
         //accessor
+        public long  Size { get{ return size; } set{ size = value; } }
+        public long  Count { get{ return cnt; } }
         public long  Value { get{ return sum; } }
         public override string ToString() { return String.Format("{0:X8}", sum); }
 
@@ -48,10 +52,13 @@ namespace Program
                 var ba = File.ReadAllBytes(src);
                 int i = 0;
                 sum = 0;
+                cnt = 0;
                 while (i < ba.Length) {
                     var b = ba[i++];
                     if (b <= 0x20) continue;
+                    if (b != (int)'S') return false;
                     var t = ba[i++] & 0x0F;
+                    if (t > 9) return false;
                     var v = ToHex(ba[i++], ba[i++]);
                     if (v >= 256) return false;
                     var l = v;
@@ -65,17 +72,30 @@ namespace Program
                         s += v;
                     }
                     var d = 0;
-                    for (var k = 0; k < l-al-1; k ++) {
+                    l -= al + 1;
+                    for (var k = 0; k < l; k ++) {
                         d += ToHex(ba[i++], ba[i++]);
                         if (v >= 256) return false;
                     }
                     s += d;
-                    sum += d;
                     v = ToHex(ba[i++], ba[i++]);
                     if (v >= 256) return false;
                     if (((d + v) & 0x00FF) == 255) return false;
+                    if (0 == t) {
+
+                    }
+                    else if (t < 4) {
+                        sum += d;
+                        cnt += l;
+                    }
                 }
-                Console.WriteLine("> "+Path.GetFileName(src)+" : "+sum+" "+ToString());
+                Console.WriteLine("> "+Path.GetFileName(src)+" :");
+                Console.WriteLine("  len="+cnt);
+                Console.WriteLine("  sum="+sum+" "+ToString());
+                if (size > 0) {
+                    sum += 255*(size*1024*1024 - cnt);
+                    Console.WriteLine("  sum("+size+"MB, fill:0xFF)="+sum+" "+ToString());
+                }
             }
             return true;
         }
