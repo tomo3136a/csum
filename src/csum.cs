@@ -16,7 +16,6 @@ namespace Program
         long size;
         long cnt;
         long sum;
-        int fill = 0x00FF;
 
         //constructor
         public CheckSum()
@@ -31,7 +30,6 @@ namespace Program
         /////////////////////////////////////////////////////////////////////
 
         //accessor
-        public int  Fill { get{ return fill; } set{ fill = 0x0FF & value; } }
         public long  Size { get{ return size; } set{ size = value; } }
         public long  Count { get{ return cnt; } }
         public long  Value { get{ return sum; } }
@@ -129,7 +127,7 @@ namespace Program
                 if (size > 0) {
                     Console.Write("rom size    : " + size + "MB");
                     Console.WriteLine(" (fill=0xFF)");
-                    sum += fill * (size * 1024 * 1024 - cnt);
+                    sum += 255 * (size * 1024 * 1024 - cnt);
                 }
                 Console.WriteLine("sum         : " + sum);
                 Console.WriteLine("sum (hex)   : " + ToString());
