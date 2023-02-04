@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
@@ -9,14 +10,13 @@ using Internal;
 
 namespace Program
 {
-
     public class CheckSum
     {
         List<string> srcs = new List<string>();
         long size;
         long cnt;
         long sum;
-        int fill = 0xFF;
+        int fill = 0x00FF;
 
         //constructor
         public CheckSum()
@@ -31,7 +31,7 @@ namespace Program
         /////////////////////////////////////////////////////////////////////
 
         //accessor
-        public long  Fill { get{ return fill; } set{ fill = 255 * value; } }
+        public int  Fill { get{ return fill; } set{ fill = 0x0FF & value; } }
         public long  Size { get{ return size; } set{ size = value; } }
         public long  Count { get{ return cnt; } }
         public long  Value { get{ return sum; } }
@@ -46,6 +46,20 @@ namespace Program
         public static int ToHex(byte h, byte l)
         {
             return (HEX[h & 0x1F] << 4) + HEX[l & 0x1F];
+        }
+
+        public string ParseToString(byte[] ba, long sp, long ep)
+        {
+            var l = (ep - sp) / 2;
+            var a = new byte[l];
+            var i = sp;
+            var j = 0;
+            for (j = 0; j < l; j ++) {
+                var v = ToHex(ba[i++], ba[i++]);
+                if (v == 0) break;
+                a[j] = (byte)v;
+            }
+            return Encoding.ASCII.GetString(a, 0, j);
         }
 
         public bool Run(int run_mode)
@@ -90,11 +104,24 @@ namespace Program
                     s += v;
                     if ((s & 0x00FF) != 255) return false;
                     if (0 == t) {
-
+                        var note = ParseToString(ba, i - 2 * l - 2, i - 2);
+                        Console.WriteLine("note        : " + note);
                     }
                     else if (t < 4) {
                         sum += d;
                         cnt += l;
+                    }
+                    else if (t < 5) {
+                        Console.WriteLine("#error not support S" + t);
+                    }
+                    else if (t < 7) {
+                        var fmt = "{0:X" + (AL[t] * 2) + "}";
+                        Console.WriteLine("record count: " + a);
+                    }
+                    else {
+                        var fmt = "{0:X" + (AL[t] * 2) + "}";
+                        var str = String.Format(fmt, a);
+                        Console.WriteLine("entry       : " + str);
                     }
                 }
                 Console.WriteLine("line count  : " + line);
