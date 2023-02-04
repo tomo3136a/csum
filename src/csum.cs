@@ -16,6 +16,7 @@ namespace Program
         long size;
         long cnt;
         long sum;
+        int fill = 0xFF;
 
         //constructor
         public CheckSum()
@@ -30,6 +31,7 @@ namespace Program
         /////////////////////////////////////////////////////////////////////
 
         //accessor
+        public long  Fill { get{ return fill; } set{ fill = 255 * value; } }
         public long  Size { get{ return size; } set{ size = value; } }
         public long  Count { get{ return cnt; } }
         public long  Value { get{ return sum; } }
@@ -50,12 +52,16 @@ namespace Program
         {
             foreach (var src in srcs) {
                 var ba = File.ReadAllBytes(src);
-                int i = 0;
                 sum = 0;
                 cnt = 0;
+                Console.WriteLine("file name   : " + Path.GetFileName(src));
+                Console.WriteLine("file size   : " + ba.Length);
+                int line = 0;
+                int i = 0;
                 while (i < ba.Length) {
                     var b = ba[i++];
                     if (b <= 0x20) continue;
+                    line ++;
                     if (b != (int)'S') return false;
                     var t = ba[i++] & 0x0F;
                     if (t > 9) return false;
@@ -74,13 +80,15 @@ namespace Program
                     var d = 0;
                     l -= al + 1;
                     for (var k = 0; k < l; k ++) {
-                        d += ToHex(ba[i++], ba[i++]);
+                        v = ToHex(ba[i++], ba[i++]);
                         if (v >= 256) return false;
+                        d += v;
                     }
                     s += d;
                     v = ToHex(ba[i++], ba[i++]);
                     if (v >= 256) return false;
-                    if (((d + v) & 0x00FF) == 255) return false;
+                    s += v;
+                    if ((s & 0x00FF) != 255) return false;
                     if (0 == t) {
 
                     }
@@ -89,13 +97,15 @@ namespace Program
                         cnt += l;
                     }
                 }
-                Console.WriteLine("> "+Path.GetFileName(src)+" :");
-                Console.WriteLine("  len="+cnt);
-                Console.WriteLine("  sum="+sum+" "+ToString());
+                Console.WriteLine("line count  : " + line);
+                Console.WriteLine("byte count  : " + cnt);
                 if (size > 0) {
-                    sum += 255*(size*1024*1024 - cnt);
-                    Console.WriteLine("  sum("+size+"MB, fill:0xFF)="+sum+" "+ToString());
+                    Console.Write("rom size    : " + size + "MB");
+                    Console.WriteLine(" (fill=0xFF)");
+                    sum += fill * (size * 1024 * 1024 - cnt);
                 }
+                Console.WriteLine("sum         : " + sum);
+                Console.WriteLine("sum (hex)   : " + ToString());
             }
             return true;
         }
