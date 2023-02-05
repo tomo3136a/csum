@@ -51,18 +51,18 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+#.NET Build
 *.user
 .vs/
 build/
 build_*/
 Release/
 Debug/
-_old/
 *.bak
 *.vdproj
 
+#ignore
 _*/
-
 _*
 
 doxygen/
