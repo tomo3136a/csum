@@ -67,3 +67,4 @@ _*
 
 doxygen/
 *.pdf
+*.log
