@@ -1,6 +1,4 @@
 *.bat       text eol=crlf
 *.cmd       text eol=crlf
 *.ps1       text eol=crlf
-*.ttl       text eol=crlf
-*.cnf       text eol=crlf
 *.ini       text eol=crlf
