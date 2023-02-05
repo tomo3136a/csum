@@ -1,7 +1,10 @@
+#define TRACE
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
+using System.Configuration;
 using System.Windows.Forms;
 
 namespace Program
@@ -57,12 +60,10 @@ namespace Program
         public bool Run()
         {
             var csum = new CheckSum();
-            if (opt_map.ContainsKey("-size")) {
-                csum.Size = Int32.Parse("0"+opt_map["-size"]);
-            }
+            csum.Config(opt_map);
             foreach (var src in src_lst) csum.Load(src);
             if (csum.Run(run_mode)) return true;
-            var msg = "Error: CheckSum("+run_mode+")";
+            var msg = "Error: CheckSum(" + run_mode + ")";
             Console.WriteLine(msg);
             return false;
         }
@@ -70,23 +71,28 @@ namespace Program
         [STAThread]
         public static void Main(string[] args)
         {
-            var p = @".\\debug.txt";
-            ((DefaultTraceListener)Debug.Listeners["Default"]).LogFileName = p;
-            Debug.WriteLine(DateTime.Now.ToString("> yyyy/MM/dd HH:mm:ss"));
             DateTime stime = DateTime.Now;
             try
             {
-                p = Environment.GetCommandLineArgs()[0];
+                var p = Environment.GetCommandLineArgs()[0];
                 p = Path.GetFileNameWithoutExtension(p);
-                AppDomain.CurrentDomain.SetData("APP_CONFIG_FILE", p + ".config");
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
+                var cfg = p + ".config";
+                AppDomain.CurrentDomain.SetData("APP_CONFIG_FILE", cfg);
+                var log = ConfigurationManager.AppSettings["log"];
+                if (null == log) log = p + ".log";
+                var wl = new TextWriterTraceListener(log, "myListener");
+                Trace.Listeners.Add(wl);
+                // Application.EnableVisualStyles();
+                // Application.SetCompatibleTextRenderingDefault(false);
+                var s = DateTime.Now.ToString("# yyyy/MM/dd HH:mm:ss");
+                Console.WriteLine(s);
                 App app = new App(p, args);
                 if(app.Init()) app.Run();
             }
             catch (Exception e) { MessageBox.Show(e.ToString()); }
-            Console.WriteLine("\n"+(DateTime.Now - stime));
-            Debug.Flush();
+            Console.WriteLine("# "+(DateTime.Now - stime));
+            Console.WriteLine("");
+            Trace.Flush();
         }
     }
 }

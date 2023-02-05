@@ -1,12 +1,10 @@
+#define TRACE
+
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.Linq;
 using System.Text;
-using Internal;
+using System.Diagnostics;
 
 namespace Program
 {
@@ -46,7 +44,7 @@ namespace Program
             return (HEX[h & 0x1F] << 4) + HEX[l & 0x1F];
         }
 
-        public string ParseToString(byte[] ba, long sp, long ep)
+        public static string ParseToString(byte[] ba, long sp, long ep)
         {
             var l = (ep - sp) / 2;
             var a = new byte[l];
@@ -60,78 +58,100 @@ namespace Program
             return Encoding.ASCII.GetString(a, 0, j);
         }
 
+        public bool Config(Dictionary<string, string> dict) {
+            if (dict.ContainsKey("-size")) {
+                Size = Int32.Parse("0"+dict["-size"]);
+                return true;
+            }
+            return false;
+        }
+
         public bool Run(int run_mode)
         {
             foreach (var src in srcs) {
-                var ba = File.ReadAllBytes(src);
-                sum = 0;
-                cnt = 0;
-                Console.WriteLine("file name   : " + Path.GetFileName(src));
-                Console.WriteLine("file size   : " + ba.Length);
-                int line = 0;
-                int i = 0;
-                while (i < ba.Length) {
-                    var b = ba[i++];
-                    if (b <= 0x20) continue;
-                    line ++;
-                    if (b != (int)'S') return false;
-                    var t = ba[i++] & 0x0F;
-                    if (t > 9) return false;
-                    var v = ToHex(ba[i++], ba[i++]);
-                    if (v >= 256) return false;
-                    var l = v;
-                    var s = v;
-                    var a = 0;
-                    var al = AL[t];
-                    for (var j = 0; j < al; j ++) {
-                        v = ToHex(ba[i++], ba[i++]);
-                        if (v >= 256) return false;
-                        a = (a << 8) + v;
-                        s += v;
-                    }
-                    var d = 0;
-                    l -= al + 1;
-                    for (var k = 0; k < l; k ++) {
-                        v = ToHex(ba[i++], ba[i++]);
-                        if (v >= 256) return false;
-                        d += v;
-                    }
-                    s += d;
+                var now = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+                if (!Calc(src)) return false;
+                var name = Path.GetFileName(src);
+                var size = (0 == Size) ? "" : (" [" + Size + "MB]");
+                var data = ToString().Substring(ToString().Length - 8);
+                var fmt = "# {0} {1} {2}{3}";
+                var msg = String.Format(fmt, now, data, name, size);
+                Trace.WriteLine(msg);
+                Console.WriteLine("");
+            }
+            return true;
+        }
+
+        public bool Calc(string src)
+        {
+            var ba = File.ReadAllBytes(src);
+            sum = 0;
+            cnt = 0;
+            Console.WriteLine("file name   : " + Path.GetFileName(src));
+            Console.WriteLine("file size   : " + ba.Length);
+            int line = 0;
+            int i = 0;
+            while (i < ba.Length) {
+                var b = ba[i++];
+                if (b <= 0x20) continue;
+                line ++;
+                if (b != (int)'S') return false;
+                var t = ba[i++] & 0x0F;
+                if (t > 9) return false;
+                var v = ToHex(ba[i++], ba[i++]);
+                if (v >= 256) return false;
+                var l = v;
+                var s = v;
+                var a = 0;
+                var al = AL[t];
+                for (var j = 0; j < al; j ++) {
                     v = ToHex(ba[i++], ba[i++]);
                     if (v >= 256) return false;
+                    a = (a << 8) + v;
                     s += v;
-                    if ((s & 0x00FF) != 255) return false;
-                    if (0 == t) {
-                        var note = ParseToString(ba, i - 2 * l - 2, i - 2);
-                        Console.WriteLine("note        : " + note);
-                    }
-                    else if (t < 4) {
-                        sum += d;
-                        cnt += l;
-                    }
-                    else if (t < 5) {
-                        Console.WriteLine("#error not support S" + t);
-                    }
-                    else if (t < 7) {
-                        var fmt = "{0:X" + (AL[t] * 2) + "}";
-                        Console.WriteLine("record count: " + a);
-                    }
-                    else {
-                        var fmt = "{0:X" + (AL[t] * 2) + "}";
-                        var str = String.Format(fmt, a);
-                        Console.WriteLine("entry       : " + str);
-                    }
                 }
-                Console.WriteLine("line count  : " + line);
-                Console.WriteLine("byte count  : " + cnt);
-                if (size > 0) {
-                    Console.Write("rom size    : " + size + "MB");
-                    Console.WriteLine(" (fill=0xFF)");
-                    sum += 255 * (size * 1024 * 1024 - cnt);
+                var d = 0;
+                l -= al + 1;
+                for (var k = 0; k < l; k ++) {
+                    v = ToHex(ba[i++], ba[i++]);
+                    if (v >= 256) return false;
+                    d += v;
                 }
-                Console.WriteLine("sum         : " + sum);
-                Console.WriteLine("sum (hex)   : " + ToString());
+                s += d;
+                v = ToHex(ba[i++], ba[i++]);
+                if (v >= 256) return false;
+                s += v;
+                if ((s & 0x00FF) != 255) return false;
+                if (0 == t) {
+                    var note = ParseToString(ba, i - 2 * l - 2, i - 2);
+                    Console.WriteLine("note        : " + note);
+                }
+                else if (t < 4) {
+                    sum += d;
+                    cnt += l;
+                }
+                else if (t < 5) {
+                    Console.WriteLine("#error not support S" + t);
+                }
+                else if (t < 7) {
+                    var fmt = "{0:X" + (AL[t] * 2) + "}";
+                    Console.WriteLine("record count: " + a);
+                }
+                else {
+                    var fmt = "{0:X" + (AL[t] * 2) + "}";
+                    var str = String.Format(fmt, a);
+                    Console.WriteLine("entry       : " + str);
+                }
             }
+            Console.WriteLine("line count  : " + line);
+            Console.WriteLine("byte count  : " + cnt);
+            if (size > 0) {
+                Console.Write("rom size    : " + size + "MB");
+                Console.WriteLine(" (fill=0xFF)");
+                sum += 255 * (size * 1024 * 1024 - cnt);
+            }
+            Console.WriteLine("sum         : " + sum);
+            Console.WriteLine("sum (hex)   : " + ToString());
             return true;
         }
     }
