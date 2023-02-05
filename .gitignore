@@ -68,3 +68,4 @@ _*
 doxygen/
 *.pdf
 *.log
+*.srec
