@@ -94,7 +94,6 @@ namespace Program
             while (i < ba.Length) {
                 var b = ba[i++];
                 if (b <= 0x20) continue;
-                line ++;
                 if (b != (int)'S') return false;
                 var t = ba[i++] & 0x0F;
                 if (t > 9) return false;
@@ -127,6 +126,7 @@ namespace Program
                     Console.WriteLine("note        : " + note);
                 }
                 else if (t < 4) {
+                    line ++;
                     sum += d;
                     cnt += l;
                 }
@@ -136,6 +136,8 @@ namespace Program
                 else if (t < 7) {
                     var fmt = "{0:X" + (AL[t] * 2) + "}";
                     Console.WriteLine("record count: " + a);
+                    if (line != a)
+                        Console.WriteLine("# error: record count " + line);
                 }
                 else {
                     var fmt = "{0:X" + (AL[t] * 2) + "}";
@@ -143,7 +145,6 @@ namespace Program
                     Console.WriteLine("entry point : " + str);
                 }
             }
-            Console.WriteLine("line count  : " + line);
             Console.WriteLine("byte count  : " + cnt);
             if (size > 0) {
                 Console.Write("rom size    : " + size + "MB");
