@@ -140,7 +140,7 @@ namespace Program
                 else {
                     var fmt = "{0:X" + (AL[t] * 2) + "}";
                     var str = String.Format(fmt, a);
-                    Console.WriteLine("entry       : " + str);
+                    Console.WriteLine("entry point : " + str);
                 }
             }
             Console.WriteLine("line count  : " + line);
