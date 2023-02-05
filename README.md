@@ -18,7 +18,6 @@ result:
     note        : hello
     record count: 3
     entry point : 0000
-    line count  : 6
     byte count  : 70
     sum         : 5641
     sum (hex)   : 00001609
@@ -45,7 +44,6 @@ result:
     note        : hello
     record count: 3
     entry point : 0000
-    line count  : 6
     byte count  : 70
     rom size    : 2MB (fill=0xFF)
     sum         : 534761551
