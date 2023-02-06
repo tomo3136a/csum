@@ -91,10 +91,15 @@ namespace Program
             Console.WriteLine("file size   : " + ba.Length);
             int line = 0;
             int i = 0;
+            bool eol = false;
             while (i < ba.Length) {
                 var b = ba[i++];
-                if (b <= 0x20) continue;
+                if (b <= 0x20) {
+                    if (b == 0x0d || b == 0x0a) eol = true;
+                    continue;
+                }
                 if (b != (int)'S') return false;
+                eol = false;
                 var t = ba[i++] & 0x0F;
                 if (t > 9) return false;
                 var v = ToHex(ba[i++], ba[i++]);
@@ -120,7 +125,11 @@ namespace Program
                 v = ToHex(ba[i++], ba[i++]);
                 if (v >= 256) return false;
                 s += v;
-                if ((s & 0x00FF) != 255) return false;
+                if ((s & 0x00FF) != 255) {
+                    var msg = "record checksum ";
+                    WriteErrorLine(msg + line + ".");
+                    return false;
+                }
                 if (0 == t) {
                     var note = ParseToString(ba, i - 2 * l - 2, i - 2);
                     Console.WriteLine("note        : " + note);
@@ -134,10 +143,11 @@ namespace Program
                     Console.WriteLine("#error not support S" + t);
                 }
                 else if (t < 7) {
-                    var fmt = "{0:X" + (AL[t] * 2) + "}";
-                    Console.WriteLine("record count: " + a);
-                    if (line != a)
-                        Console.WriteLine("# error: record count " + line);
+                    Console.WriteLine("S" + t + " record   : " + a);
+                    if (line != a) {
+                        var msg = "no match record count ";
+                        WriteErrorLine(msg + line + ".");
+                    }
                 }
                 else {
                     var fmt = "{0:X" + (AL[t] * 2) + "}";
@@ -145,6 +155,11 @@ namespace Program
                     Console.WriteLine("entry point : " + str);
                 }
             }
+            if (!eol) {
+                var msg = "EOF is not blank.";
+                WriteErrorLine(msg);
+            }
+            Console.WriteLine("record count: " + line);
             Console.WriteLine("byte count  : " + cnt);
             if (size > 0) {
                 Console.Write("rom size    : " + size + "MB");
@@ -154,6 +169,15 @@ namespace Program
             Console.WriteLine("sum         : " + sum);
             Console.WriteLine("sum (hex)   : " + ToString());
             return true;
+        }
+
+        void WriteErrorLine(string msg)
+        {
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.Red;
+            Console.Write("#error: " + msg);
+            Console.ResetColor();
+            Console.WriteLine("");
         }
     }
 }
