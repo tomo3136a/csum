@@ -11,6 +11,7 @@ namespace Program
     public class CheckSum
     {
         List<string> srcs = new List<string>();
+        Encoding enc;
         long size;
         long cnt;
         long sum;
@@ -18,6 +19,7 @@ namespace Program
         //constructor
         public CheckSum()
         {
+            enc = Encoding.ASCII;
         }
 
         public void Load(string src)
@@ -31,6 +33,7 @@ namespace Program
         public long  Size { get{ return size; } set{ size = value; } }
         public long  Count { get{ return cnt; } }
         public long  Value { get{ return sum; } }
+        public Encoding Encoding { get { return enc; } set { enc = value; } }
         public override string ToString() { return String.Format("{0:X8}", sum); }
 
         const int MB = 256;
@@ -44,7 +47,7 @@ namespace Program
             return (HEX[h & 0x1F] << 4) + HEX[l & 0x1F];
         }
 
-        public static string ParseToString(byte[] ba, long sp, long ep)
+        public static string ParseToString(byte[] ba, long sp, long ep, Encoding enc=null)
         {
             var l = (ep - sp) / 2;
             var a = new byte[l];
@@ -55,15 +58,21 @@ namespace Program
                 if (v == 0) break;
                 a[j] = (byte)v;
             }
-            return Encoding.ASCII.GetString(a, 0, j);
+            if (enc == null) enc = Encoding.ASCII;
+            return enc.GetString(a, 0, j);
         }
 
         public bool Config(Dictionary<string, string> dict) {
+            var res = false;
             if (dict.ContainsKey("-size")) {
                 Size = Int32.Parse("0"+dict["-size"]);
-                return true;
+                res = true;
             }
-            return false;
+            if (dict.ContainsKey("-enc")) {
+                enc = System.Text.Encoding.GetEncoding(dict["-enc"]);
+                res = true;
+            }
+            return res;
         }
 
         public bool Run(int run_mode)
@@ -131,7 +140,7 @@ namespace Program
                     return false;
                 }
                 if (0 == t) {
-                    var note = ParseToString(ba, i - 2 * l - 2, i - 2);
+                    var note = ParseToString(ba, i - 2 * l - 2, i - 2, enc);
                     Console.WriteLine("note        : " + note);
                 }
                 else if (t < 4) {

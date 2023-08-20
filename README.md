@@ -51,6 +51,17 @@ result:
 
     # 00:00:00.0312806
 
+### S0 record encoding
+
+The S0 record encoding specified with the command option '-enc'.
+Default is ASCII.
+
+Example encoding name is 'utf-8', 'sjis', 'euc-jp', ...
+
+command:
+
+    csum.exe -enc=utf-8 test.srec
+
 ## Build
 
     > Build.cmd
