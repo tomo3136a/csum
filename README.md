@@ -1,10 +1,10 @@
 # csum
 
-S-Record check sum calcurator
+S-Record check sum calculator
 
 ## Usage
 
-### normal calcurate
+### normal calculate
 
 command:
 
