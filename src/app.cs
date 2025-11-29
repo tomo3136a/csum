@@ -30,9 +30,11 @@ namespace Program
 
         private bool ParseParam(string arg)
         {
-            if ('-' == arg[0]) {
+            if ('-' == arg[0])
+            {
                 string[] ss = (arg + "=").Split('=');
-                if (ss.Length == 2) {
+                if (ss.Length == 2)
+                {
                     int res = 0;
                     if (Int32.TryParse(ss[0], out res)) run_mode = -res;
                 }
@@ -40,7 +42,8 @@ namespace Program
                 opt_map.Add(ss[0], ss[1]);
                 return true;
             }
-            if (arg.Contains("=")) {
+            if (arg.Contains("="))
+            {
                 string[] ss = (arg + "=").Split('=');
                 if (col_map.ContainsKey(ss[0])) col_map.Remove(ss[0]);
                 col_map.Add(ss[0], ss[1]);
@@ -78,8 +81,9 @@ namespace Program
                 p = Path.GetFileNameWithoutExtension(p);
                 var cfg = p + ".config";
                 AppDomain.CurrentDomain.SetData("APP_CONFIG_FILE", cfg);
-                var log = ConfigurationManager.AppSettings["log"];
-                if (null == log) log = p + ".log";
+                var cf = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var df = cf.AppSettings.Settings["log"];
+                var log = (null == df) ? (p + ".log") : df.Value;
                 var wl = new TextWriterTraceListener(log, "myListener");
                 Trace.Listeners.Add(wl);
                 // Application.EnableVisualStyles();
@@ -87,10 +91,10 @@ namespace Program
                 var s = DateTime.Now.ToString("# yyyy/MM/dd HH:mm:ss");
                 Console.WriteLine(s);
                 App app = new App(p, args);
-                if(app.Init()) app.Run();
+                if (app.Init()) app.Run();
             }
             catch (Exception e) { MessageBox.Show(e.ToString()); }
-            Console.WriteLine("# "+(DateTime.Now - stime));
+            Console.WriteLine("# " + (DateTime.Now - stime));
             Console.WriteLine("");
             Trace.Flush();
         }
