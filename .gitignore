@@ -70,3 +70,4 @@ doxygen/
 *.pdf
 *.log
 *.srec
+*.bin
