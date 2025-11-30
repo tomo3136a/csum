@@ -21,6 +21,11 @@ namespace Program
         string _ini_file = "";
         int _run_mode = 0;
 
+        /// <summary>
+        /// application consstructor
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="args"></param>
         public App(string name, string[] args)
         {
             _app_name = name;
@@ -28,20 +33,31 @@ namespace Program
             _run_mode = 0;
         }
 
+        /// <summary>
+        /// parse of commandline
+        /// </summary>
+        /// <param name="arg"></param>
+        /// <returns></returns>
         private bool ParseCommandLine(string arg)
         {
             if ('-' == arg[0])
             {
                 string[] ss = (arg + "=").Split('=');
+
+                //run-level(-n)
                 if (ss.Length == 2)
                 {
                     int res = 0;
                     if (Int32.TryParse(ss[0], out res)) _run_mode = -res;
                 }
+
+                // option(-xxx=yyyy)
                 if (_opt_map.ContainsKey(ss[0])) _opt_map.Remove(ss[0]);
                 _opt_map.Add(ss[0], ss[1]);
                 return true;
             }
+
+            // condition(xxx=yyyy)
             if (arg.Contains("="))
             {
                 string[] ss = (arg + "=").Split('=');
@@ -49,10 +65,16 @@ namespace Program
                 _col_map.Add(ss[0], ss[1]);
                 return true;
             }
+
+            // source
             _src_lst.Add(arg);
             return true;
         }
 
+        /// <summary>
+        /// initialize
+        /// </summary>
+        /// <returns></returns>
         public bool Init()
         {
             _ini_file = _app_name + ".ini";
@@ -60,6 +82,10 @@ namespace Program
             return true;
         }
 
+        /// <summary>
+        /// main task run
+        /// </summary>
+        /// <returns></returns>
         public bool Run()
         {
             var csum = new CheckSum();
@@ -71,6 +97,10 @@ namespace Program
             return false;
         }
 
+        /// <summary>
+        /// main function
+        /// </summary>
+        /// <param name="args"></param>
         [STAThread]
         public static void Main(string[] args)
         {

@@ -10,36 +10,42 @@ namespace Program
 {
     public class CheckSum
     {
-        List<string> _srcs = new List<string>();
-        Encoding _enc = Encoding.ASCII;
+        private List<string> _srcs = new List<string>();
+        private Encoding _enc = Encoding.ASCII;
 
         public enum FmtType
         {
             AUTO, SREC, HEX, BIN
         }
-        FmtType _type = FmtType.AUTO;
-        long _size = 0;
-        long _cnt = 0;
-        long _sum = 0;
+        private FmtType _type = FmtType.AUTO;
 
-        int _out_size = 0;
-        int _out_cnt = 0;
-        int _out_sum = 0;
+        private long _size = 0;
+        private long _cnt = 0;
+        private long _sum = 0;
 
-        //constructor
+        private int _out_size = 0;
+        private int _out_cnt = 0;
+        private int _out_sum = 0;
+
+        /////////////////////////////////////////////////////////////////////
+        // constructor
+
         public CheckSum()
         {
-            _enc = Encoding.ASCII;
         }
 
+        /// <summary>
+        /// Add load file
+        /// </summary>
+        /// <param name="src">source path</param>
         public void Load(string src)
         {
             _srcs.Add(src);
         }
 
         /////////////////////////////////////////////////////////////////////
+        // accessor
 
-        //accessor
         public FmtType Type { get { return _type; } set { _type = value; } }
         public long Size { get { return _size; } set { _size = value; } }
         public long Count { get { return _cnt; } }
@@ -49,6 +55,9 @@ namespace Program
         public int OutCountFile { get { return _out_cnt; } set { _out_cnt = value; } }
         public int OutSumFile { get { return _out_sum; } set { _out_sum = value; } }
         public override string ToString() { return String.Format("{0:X8}", _sum); }
+
+        /////////////////////////////////////////////////////////////////////
+        // common function
 
         const int MB = 256;
         static int[] HEX = {
@@ -123,6 +132,11 @@ namespace Program
             return res;
         }
 
+        /// <summary>
+        /// run
+        /// </summary>
+        /// <param name="run_mode"></param>
+        /// <returns></returns>
         public bool Run(int run_mode)
         {
             foreach (var src in _srcs)
@@ -140,6 +154,11 @@ namespace Program
             return true;
         }
 
+        /// <summary>
+        /// sum check calcuration
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
         public bool Calc(string src)
         {
             var ba = File.ReadAllBytes(src);
@@ -175,6 +194,12 @@ namespace Program
             return true;
         }
 
+        /// <summary>
+        /// out of result binary
+        /// </summary>
+        /// <param name="f"></param>
+        /// <param name="v"></param>
+        /// <param name="sz"></param>
         public void OutBinary(string f, long v, int sz)
         {
             using (var fs = new FileStream(f, FileMode.OpenOrCreate, FileAccess.Write))
@@ -192,6 +217,11 @@ namespace Program
             }
         }
 
+        /// <summary>
+        /// calucurate S record 
+        /// </summary>
+        /// <param name="ba"></param>
+        /// <returns></returns>
         public bool CalcSRec(byte[] ba)
         {
             int line = 0;
@@ -281,6 +311,11 @@ namespace Program
             return true;
         }
 
+        /// <summary>
+        /// calcurate binasy
+        /// </summary>
+        /// <param name="ba"></param>
+        /// <returns></returns>
         public bool CalcBin(byte[] ba)
         {
             int i = 0;
@@ -294,6 +329,10 @@ namespace Program
             return true;
         }
 
+        /// <summary>
+        /// print error message
+        /// </summary>
+        /// <param name="msg"></param>
         void WriteErrorLine(string msg)
         {
             Console.ForegroundColor = ConsoleColor.White;
