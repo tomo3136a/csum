@@ -11,24 +11,24 @@ namespace Program
 {
     public partial class App
     {
-        string app_name;
-        string[] app_args;
+        string _app_name = "";
+        string[] _app_args = new string[] { };
 
-        Dictionary<string, string> opt_map = new Dictionary<string, string>() { };
-        Dictionary<string, string> col_map = new Dictionary<string, string>() { };
-        List<string> src_lst = new List<string>();
+        Dictionary<string, string> _opt_map = new Dictionary<string, string>() { };
+        Dictionary<string, string> _col_map = new Dictionary<string, string>() { };
+        List<string> _src_lst = new List<string>();
 
-        string ini_file;
-        int run_mode;
+        string ini_file = "";
+        int _run_mode = 0;
 
         public App(string name, string[] args)
         {
-            app_name = name;
-            app_args = args;
-            run_mode = 0;
+            _app_name = name;
+            _app_args = args;
+            _run_mode = 0;
         }
 
-        private bool ParseParam(string arg)
+        private bool ParseCommandLine(string arg)
         {
             if ('-' == arg[0])
             {
@@ -36,37 +36,37 @@ namespace Program
                 if (ss.Length == 2)
                 {
                     int res = 0;
-                    if (Int32.TryParse(ss[0], out res)) run_mode = -res;
+                    if (Int32.TryParse(ss[0], out res)) _run_mode = -res;
                 }
-                if (opt_map.ContainsKey(ss[0])) opt_map.Remove(ss[0]);
-                opt_map.Add(ss[0], ss[1]);
+                if (_opt_map.ContainsKey(ss[0])) _opt_map.Remove(ss[0]);
+                _opt_map.Add(ss[0], ss[1]);
                 return true;
             }
             if (arg.Contains("="))
             {
                 string[] ss = (arg + "=").Split('=');
-                if (col_map.ContainsKey(ss[0])) col_map.Remove(ss[0]);
-                col_map.Add(ss[0], ss[1]);
+                if (_col_map.ContainsKey(ss[0])) _col_map.Remove(ss[0]);
+                _col_map.Add(ss[0], ss[1]);
                 return true;
             }
-            src_lst.Add(arg);
+            _src_lst.Add(arg);
             return true;
         }
 
         public bool Init()
         {
-            ini_file = app_name + ".ini";
-            foreach (var arg in app_args) ParseParam(arg);
+            ini_file = _app_name + ".ini";
+            foreach (var arg in _app_args) ParseCommandLine(arg);
             return true;
         }
 
         public bool Run()
         {
             var csum = new CheckSum();
-            csum.Config(opt_map);
-            foreach (var src in src_lst) csum.Load(src);
-            if (csum.Run(run_mode)) return true;
-            var msg = "Error: CheckSum(" + run_mode + ")";
+            csum.Config(_opt_map);
+            foreach (var src in _src_lst) csum.Load(src);
+            if (csum.Run(_run_mode)) return true;
+            var msg = "Error: CheckSum(" + _run_mode + ")";
             Console.WriteLine(msg);
             return false;
         }
@@ -77,20 +77,21 @@ namespace Program
             DateTime stime = DateTime.Now;
             try
             {
-                var p = Environment.GetCommandLineArgs()[0];
-                p = Path.GetFileNameWithoutExtension(p);
-                var cfg = p + ".config";
-                AppDomain.CurrentDomain.SetData("APP_CONFIG_FILE", cfg);
-                var cf = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var df = cf.AppSettings.Settings["log"];
-                var log = (null == df) ? (p + ".log") : df.Value;
-                var wl = new TextWriterTraceListener(log, "myListener");
-                Trace.Listeners.Add(wl);
+                var s = Environment.GetCommandLineArgs()[0];
+                var name = Path.GetFileNameWithoutExtension(s);
+
+                AppDomain.CurrentDomain.SetData("APP_CONFIG_FILE", name + ".config");
+                var conf = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var data = conf.AppSettings.Settings["log"];
+                var log = (null == data) ? (name + ".log") : data.Value;
+                Trace.Listeners.Add(new TextWriterTraceListener(log, "myListener"));
+
                 // Application.EnableVisualStyles();
                 // Application.SetCompatibleTextRenderingDefault(false);
-                var s = DateTime.Now.ToString("# yyyy/MM/dd HH:mm:ss");
+                s = DateTime.Now.ToString("# yyyy/MM/dd HH:mm:ss");
                 Console.WriteLine(s);
-                App app = new App(p, args);
+
+                App app = new App(name, args);
                 if (app.Init()) app.Run();
             }
             catch (Exception e) { MessageBox.Show(e.ToString()); }
