@@ -22,6 +22,10 @@ namespace Program
         long _cnt = 0;
         long _sum = 0;
 
+        int _out_size = 0;
+        int _out_cnt = 0;
+        int _out_sum = 0;
+
         //constructor
         public CheckSum()
         {
@@ -41,6 +45,9 @@ namespace Program
         public long Count { get { return _cnt; } }
         public long Value { get { return _sum; } }
         public Encoding Encoding { get { return _enc; } set { _enc = value; } }
+        public int OutSizeFile { get { return _out_size; } set { _out_size = value; } }
+        public int OutCountFile { get { return _out_cnt; } set { _out_cnt = value; } }
+        public int OutSumFile { get { return _out_sum; } set { _out_sum = value; } }
         public override string ToString() { return String.Format("{0:X8}", _sum); }
 
         const int MB = 256;
@@ -98,6 +105,21 @@ namespace Program
                 _enc = System.Text.Encoding.GetEncoding(dict["-enc"]);
                 res = true;
             }
+            if (dict.ContainsKey("-out"))
+            {
+                foreach (var s in dict["-out"].Split(new char[] { ',' }))
+                {
+                    var ss = s.Split(new char[] { ':' });
+                    var n = (ss.Length > 1) ? Int32.Parse("0" + ss[1]) : 8;
+                    Console.WriteLine("> " + ss[0] + " : " + n);
+                    switch (ss[0].ToLower())
+                    {
+                        case "size": OutSizeFile = n; break;
+                        case "count": OutCountFile = n; break;
+                        case "sum": OutSumFile = n; break;
+                    }
+                }
+            }
             return res;
         }
 
@@ -147,7 +169,27 @@ namespace Program
             }
             Console.WriteLine("sum         : " + _sum);
             Console.WriteLine("sum (hex)   : " + ToString());
+            if (_out_size > 0) OutBinary("size.bin", _size, _out_size);
+            if (_out_cnt > 0) OutBinary("count.bin", _cnt, _out_cnt);
+            if (_out_sum > 0) OutBinary("sum.bin", _sum, _out_sum);
             return true;
+        }
+
+        public void OutBinary(string f, long v, int sz)
+        {
+            using (var fs = new FileStream(f, FileMode.OpenOrCreate, FileAccess.Write))
+            {
+                using (var bw = new BinaryWriter(fs))
+                {
+                    switch (sz)
+                    {
+                        case 1: bw.Write((char)(v & 0x0FF)); break;
+                        case 2: bw.Write((short)(v & 0x0FFFF)); break;
+                        case 4: bw.Write((int)(v & 0x0FFFFFFFF)); break;
+                        default: bw.Write(v); break;
+                    }
+                }
+            }
         }
 
         public bool CalcSRec(byte[] ba)
@@ -155,6 +197,7 @@ namespace Program
             int line = 0;
             int i = 0;
             bool eol = false;
+            Console.WriteLine("file format : S record");
             while (i < ba.Length)
             {
                 var b = ba[i++];
@@ -237,15 +280,15 @@ namespace Program
             Console.WriteLine("record count: " + line);
             return true;
         }
+
         public bool CalcBin(byte[] ba)
         {
-            int line = 0;
             int i = 0;
-            Console.WriteLine("record count: " + line);
+            Console.WriteLine("file format : binary");
             while (i < ba.Length)
             {
                 var b = ba[i++];
-                _sum += b;
+                _sum += 0x0FF & b;
                 _cnt++;
             }
             return true;
