@@ -10,35 +10,35 @@ namespace Program
 {
     public class CheckSum
     {
-        List<string> srcs = new List<string>();
-        Encoding enc;
-        long size;
-        long cnt;
-        long sum;
+        List<string> _srcs = new List<string>();
+        Encoding _enc = Encoding.ASCII;
+        long _size = 0;
+        long _cnt = 0;
+        long _sum = 0;
 
         //constructor
         public CheckSum()
         {
-            enc = Encoding.ASCII;
+            _enc = Encoding.ASCII;
         }
 
         public void Load(string src)
         {
-            srcs.Add(src);
+            _srcs.Add(src);
         }
 
         /////////////////////////////////////////////////////////////////////
 
         //accessor
-        public long  Size { get{ return size; } set{ size = value; } }
-        public long  Count { get{ return cnt; } }
-        public long  Value { get{ return sum; } }
-        public Encoding Encoding { get { return enc; } set { enc = value; } }
-        public override string ToString() { return String.Format("{0:X8}", sum); }
+        public long Size { get { return _size; } set { _size = value; } }
+        public long Count { get { return _cnt; } }
+        public long Value { get { return _sum; } }
+        public Encoding Encoding { get { return _enc; } set { _enc = value; } }
+        public override string ToString() { return String.Format("{0:X8}", _sum); }
 
         const int MB = 256;
         static int[] HEX = {
-            MB, 10, 11, 12, 13, 14, 15, MB, MB, MB, MB, MB, MB, MB, MB, MB, 
+            MB, 10, 11, 12, 13, 14, 15, MB, MB, MB, MB, MB, MB, MB, MB, MB,
             0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  MB, MB, MB, MB, MB, MB
         };
         static int[] AL = { 2, 2, 3, 4, 0, 2, 3, 4, 3, 2 };
@@ -47,13 +47,14 @@ namespace Program
             return (HEX[h & 0x1F] << 4) + HEX[l & 0x1F];
         }
 
-        public static string ParseToString(byte[] ba, long sp, long ep, Encoding enc=null)
+        public static string ParseToString(byte[] ba, long sp, long ep, Encoding enc = null)
         {
             var l = (ep - sp) / 2;
             var a = new byte[l];
             var i = sp;
             var j = 0;
-            for (j = 0; j < l; j ++) {
+            for (j = 0; j < l; j++)
+            {
                 var v = ToHex(ba[i++], ba[i++]);
                 if (v == 0) break;
                 a[j] = (byte)v;
@@ -62,14 +63,17 @@ namespace Program
             return enc.GetString(a, 0, j);
         }
 
-        public bool Config(Dictionary<string, string> dict) {
+        public bool Config(Dictionary<string, string> dict)
+        {
             var res = false;
-            if (dict.ContainsKey("-size")) {
-                Size = Int32.Parse("0"+dict["-size"]);
+            if (dict.ContainsKey("-size"))
+            {
+                Size = Int32.Parse("0" + dict["-size"]);
                 res = true;
             }
-            if (dict.ContainsKey("-enc")) {
-                enc = System.Text.Encoding.GetEncoding(dict["-enc"]);
+            if (dict.ContainsKey("-enc"))
+            {
+                _enc = System.Text.Encoding.GetEncoding(dict["-enc"]);
                 res = true;
             }
             return res;
@@ -77,7 +81,8 @@ namespace Program
 
         public bool Run(int run_mode)
         {
-            foreach (var src in srcs) {
+            foreach (var src in _srcs)
+            {
                 var now = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
                 if (!Calc(src)) return false;
                 var name = Path.GetFileName(src);
@@ -94,16 +99,18 @@ namespace Program
         public bool Calc(string src)
         {
             var ba = File.ReadAllBytes(src);
-            sum = 0;
-            cnt = 0;
+            _sum = 0;
+            _cnt = 0;
             Console.WriteLine("file name   : " + Path.GetFileName(src));
             Console.WriteLine("file size   : " + ba.Length);
             int line = 0;
             int i = 0;
             bool eol = false;
-            while (i < ba.Length) {
+            while (i < ba.Length)
+            {
                 var b = ba[i++];
-                if (b <= 0x20) {
+                if (b <= 0x20)
+                {
                     if (b == 0x0d || b == 0x0a) eol = true;
                     continue;
                 }
@@ -117,7 +124,8 @@ namespace Program
                 var s = v;
                 var a = 0;
                 var al = AL[t];
-                for (var j = 0; j < al; j ++) {
+                for (var j = 0; j < al; j++)
+                {
                     v = ToHex(ba[i++], ba[i++]);
                     if (v >= 256) return false;
                     a = (a << 8) + v;
@@ -125,7 +133,8 @@ namespace Program
                 }
                 var d = 0;
                 l -= al + 1;
-                for (var k = 0; k < l; k ++) {
+                for (var k = 0; k < l; k++)
+                {
                     v = ToHex(ba[i++], ba[i++]);
                     if (v >= 256) return false;
                     d += v;
@@ -134,48 +143,57 @@ namespace Program
                 v = ToHex(ba[i++], ba[i++]);
                 if (v >= 256) return false;
                 s += v;
-                if ((s & 0x00FF) != 255) {
+                if ((s & 0x00FF) != 255)
+                {
                     var msg = "record checksum ";
                     WriteErrorLine(msg + line + ".");
                     return false;
                 }
-                if (0 == t) {
-                    var note = ParseToString(ba, i - 2 * l - 2, i - 2, enc);
+                if (0 == t)
+                {
+                    var note = ParseToString(ba, i - 2 * l - 2, i - 2, _enc);
                     Console.WriteLine("note        : " + note);
                 }
-                else if (t < 4) {
-                    line ++;
-                    sum += d;
-                    cnt += l;
+                else if (t < 4)
+                {
+                    line++;
+                    _sum += d;
+                    _cnt += l;
                 }
-                else if (t < 5) {
+                else if (t < 5)
+                {
                     Console.WriteLine("#error not support S" + t);
                 }
-                else if (t < 7) {
+                else if (t < 7)
+                {
                     Console.WriteLine("S" + t + " record   : " + a);
-                    if (line != a) {
+                    if (line != a)
+                    {
                         var msg = "no match record count ";
                         WriteErrorLine(msg + line + ".");
                     }
                 }
-                else {
+                else
+                {
                     var fmt = "{0:X" + (AL[t] * 2) + "}";
                     var str = String.Format(fmt, a);
                     Console.WriteLine("entry point : " + str);
                 }
             }
-            if (!eol) {
+            if (!eol)
+            {
                 var msg = "EOF is not blank.";
                 WriteErrorLine(msg);
             }
             Console.WriteLine("record count: " + line);
-            Console.WriteLine("byte count  : " + cnt);
-            if (size > 0) {
-                Console.Write("rom size    : " + size + "MB");
+            Console.WriteLine("byte count  : " + _cnt);
+            if (_size > 0)
+            {
+                Console.Write("rom size    : " + _size + "MB");
                 Console.WriteLine(" (fill=0xFF)");
-                sum += 255 * (size * 1024 * 1024 - cnt);
+                _sum += 255 * (_size * 1024 * 1024 - _cnt);
             }
-            Console.WriteLine("sum         : " + sum);
+            Console.WriteLine("sum         : " + _sum);
             Console.WriteLine("sum (hex)   : " + ToString());
             return true;
         }

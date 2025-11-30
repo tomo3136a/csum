@@ -18,7 +18,7 @@ namespace Program
         Dictionary<string, string> _col_map = new Dictionary<string, string>() { };
         List<string> _src_lst = new List<string>();
 
-        string ini_file = "";
+        string _ini_file = "";
         int _run_mode = 0;
 
         public App(string name, string[] args)
@@ -55,7 +55,7 @@ namespace Program
 
         public bool Init()
         {
-            ini_file = _app_name + ".ini";
+            _ini_file = _app_name + ".ini";
             foreach (var arg in _app_args) ParseCommandLine(arg);
             return true;
         }
