@@ -120,7 +120,6 @@ namespace Program
                 {
                     var ss = s.Split(new char[] { ':' });
                     var n = (ss.Length > 1) ? Int32.Parse("0" + ss[1]) : 8;
-                    Console.WriteLine("> " + ss[0] + " : " + n);
                     switch (ss[0].ToLower())
                     {
                         case "size": OutSizeFile = n; break;
