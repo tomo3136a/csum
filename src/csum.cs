@@ -12,6 +12,12 @@ namespace Program
     {
         List<string> _srcs = new List<string>();
         Encoding _enc = Encoding.ASCII;
+
+        public enum FmtType
+        {
+            AUTO, SREC, HEX, BIN
+        }
+        FmtType _type = FmtType.AUTO;
         long _size = 0;
         long _cnt = 0;
         long _sum = 0;
@@ -30,6 +36,7 @@ namespace Program
         /////////////////////////////////////////////////////////////////////
 
         //accessor
+        public FmtType Type { get { return _type; } set { _type = value; } }
         public long Size { get { return _size; } set { _size = value; } }
         public long Count { get { return _cnt; } }
         public long Value { get { return _sum; } }
@@ -66,6 +73,21 @@ namespace Program
         public bool Config(Dictionary<string, string> dict)
         {
             var res = false;
+            if (dict.ContainsKey("-type"))
+            {
+                var s = dict["-type"].ToLower();
+                if (s != "")
+                {
+                    switch (s[0])
+                    {
+                        case 's': Type = FmtType.SREC; break;
+                        case 'h': Type = FmtType.HEX; break;
+                        case 'b': Type = FmtType.BIN; break;
+                        default: Type = FmtType.AUTO; break;
+                    }
+                }
+                res = true;
+            }
             if (dict.ContainsKey("-size"))
             {
                 Size = Int32.Parse("0" + dict["-size"]);
@@ -103,6 +125,33 @@ namespace Program
             _cnt = 0;
             Console.WriteLine("file name   : " + Path.GetFileName(src));
             Console.WriteLine("file size   : " + ba.Length);
+            switch (_type)
+            {
+                case FmtType.AUTO:
+                case FmtType.SREC:
+                    if (!CalcSRec(ba)) return false;
+                    break;
+                case FmtType.HEX:
+                    Console.WriteLine("Not support Format.");
+                    break;
+                case FmtType.BIN:
+                    if (!CalcBin(ba)) return false;
+                    break;
+            }
+            Console.WriteLine("byte count  : " + _cnt);
+            if (_size > 0)
+            {
+                Console.Write("rom size    : " + _size + "MB");
+                Console.WriteLine(" (fill=0xFF)");
+                _sum += 255 * (_size * 1024 * 1024 - _cnt);
+            }
+            Console.WriteLine("sum         : " + _sum);
+            Console.WriteLine("sum (hex)   : " + ToString());
+            return true;
+        }
+
+        public bool CalcSRec(byte[] ba)
+        {
             int line = 0;
             int i = 0;
             bool eol = false;
@@ -186,15 +235,19 @@ namespace Program
                 WriteErrorLine(msg);
             }
             Console.WriteLine("record count: " + line);
-            Console.WriteLine("byte count  : " + _cnt);
-            if (_size > 0)
+            return true;
+        }
+        public bool CalcBin(byte[] ba)
+        {
+            int line = 0;
+            int i = 0;
+            Console.WriteLine("record count: " + line);
+            while (i < ba.Length)
             {
-                Console.Write("rom size    : " + _size + "MB");
-                Console.WriteLine(" (fill=0xFF)");
-                _sum += 255 * (_size * 1024 * 1024 - _cnt);
+                var b = ba[i++];
+                _sum += b;
+                _cnt++;
             }
-            Console.WriteLine("sum         : " + _sum);
-            Console.WriteLine("sum (hex)   : " + ToString());
             return true;
         }
 
