@@ -1,7 +1,9 @@
 #builder
 #
-$AppName = "csum.exe"
-$OutputPath = "c:/opt/bin"
+param($OutputPath = "./bin", [switch]$pass)
+
+$AppName = Split-Path "." -Leaf
+$AppExts = ".exe"
 
 $Path = "src/*.cs"
 $ReferencedAssemblies = "System.Configuration", "System.Windows.Forms"
@@ -12,9 +14,9 @@ if (-not (Test-Path $OutputPath)) {
   New-Item -Path $OutputPath -ItemType Directory | Out-Null
   Write-Output "make directory."
 }
-$OutputAssembly = Join-Path (Resolve-Path -Path $OutputPath) $AppName
+$OutputAssembly = Join-Path (Resolve-Path -Path $OutputPath) $AppName$AppExts
 
-Write-Output "build program:  $AppName"
+Write-Output "build program:  $AppName$AppExts"
 Write-Output "    Path:       $Path"
 Write-Output "    Output:     $OutputAssembly"
 Write-Output "    References: $ReferencedAssemblies"
@@ -23,4 +25,4 @@ Add-Type -Path $Path -OutputType ConsoleApplication `
   -ReferencedAssemblies $ReferencedAssemblies
 
 Write-Host "build completed." -ForegroundColor Yellow
-$host.UI.RawUI.ReadKey() | Out-Null
+if (-not $pass) { $host.UI.RawUI.ReadKey() | Out-Null }
