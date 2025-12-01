@@ -15,7 +15,7 @@ namespace Program
 
         public enum FmtType
         {
-            AUTO, SREC, HEX, BIN
+            AUTO, SREC, IHEX, BIN
         }
         private FmtType _type = FmtType.AUTO;
 
@@ -97,7 +97,7 @@ namespace Program
                     switch (s[0])
                     {
                         case 's': Type = FmtType.SREC; break;
-                        case 'h': Type = FmtType.HEX; break;
+                        case 'i': Type = FmtType.IHEX; break;
                         case 'b': Type = FmtType.BIN; break;
                         default: Type = FmtType.AUTO; break;
                     }
@@ -171,8 +171,8 @@ namespace Program
                 case FmtType.SREC:
                     if (!CalcSRec(ba)) return false;
                     break;
-                case FmtType.HEX:
-                    Console.WriteLine("Not support Format.");
+                case FmtType.IHEX:
+                    if (!CalcIHex(ba)) return false;
                     break;
                 case FmtType.BIN:
                     if (!CalcBin(ba)) return false;
@@ -217,7 +217,7 @@ namespace Program
         }
 
         /// <summary>
-        /// calucurate S record 
+        /// calcurate S record 
         /// </summary>
         /// <param name="ba"></param>
         /// <returns></returns>
@@ -298,6 +298,107 @@ namespace Program
                 {
                     var fmt = "{0:X" + (AL[t] * 2) + "}";
                     var str = String.Format(fmt, a);
+                    Console.WriteLine("entry point : " + str);
+                }
+            }
+            if (!eol)
+            {
+                var msg = "EOF is not blank.";
+                WriteErrorLine(msg);
+            }
+            Console.WriteLine("record count: " + line);
+            return true;
+        }
+
+        /// <summary>
+        /// calcurate IHex record 
+        /// </summary>
+        /// <param name="ba"></param>
+        /// <returns></returns>
+        public bool CalcIHex(byte[] ba)
+        {
+            int line = 0;
+            int i = 0;
+            bool eol = false;
+            Console.WriteLine("file format : IHex record");
+            while (i < ba.Length)
+            {
+                var b = ba[i++];
+                if (b <= 0x20)
+                {
+                    if (b == 0x0d || b == 0x0a) eol = true;
+                    continue;
+                }
+                if (b != (int)':') return false;
+                eol = false;
+
+                var v = ToHex(ba[i++], ba[i++]);
+                if (v >= 256) return false;
+                var l = v;
+                var s = v;
+
+                v = ToHex(ba[i++], ba[i++]);
+                if (v >= 256) return false;
+                var a = v;
+                s += v;
+                v = ToHex(ba[i++], ba[i++]);
+                if (v >= 256) return false;
+                a = (a << 8) + v;
+                s += v;
+
+                v = ToHex(ba[i++], ba[i++]);
+                if (v >= 256) return false;
+                var t = v;
+                if (t > 5) return false;
+                s += v;
+
+                var d = 0;
+                var e = 0;
+                for (var k = 0; k < l; k++)
+                {
+                    v = ToHex(ba[i++], ba[i++]);
+                    if (v >= 256) return false;
+                    d += v;
+                    e = (e << 8) + v;
+                }
+                s += d;
+
+                v = ToHex(ba[i++], ba[i++]);
+                if (v >= 256) return false;
+                s += v;
+                if ((s & 0x00FF) != 0)
+                {
+                    var msg = "record checksum " + s;
+                    WriteErrorLine(msg + line + ".");
+                    return false;
+                }
+
+                if (t == 0)
+                {
+                    line++;
+                    _sum += d;
+                    _cnt += l;
+                }
+                else if (t == 1)
+                {
+                    Console.WriteLine("end of file : " + line);
+                }
+                else if (t == 2)
+                {
+                    var fmt = "{0:X5}";
+                    var str = String.Format(fmt, e * 16);
+                    Console.WriteLine("base address: " + str);
+                }
+                else if (t == 4)
+                {
+                    var fmt = "{0:X8}";
+                    var str = String.Format(fmt, e * 65536);
+                    Console.WriteLine("base address: " + str);
+                }
+                else if (t == 3 || t == 5)
+                {
+                    var fmt = "{0:X8}";
+                    var str = String.Format(fmt, e);
                     Console.WriteLine("entry point : " + str);
                 }
             }
