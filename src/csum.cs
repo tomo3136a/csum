@@ -201,7 +201,7 @@ namespace Program
         /// <param name="sz"></param>
         public void OutBinary(string f, long v, int sz)
         {
-            using (var fs = new FileStream(f, FileMode.OpenOrCreate, FileAccess.Write))
+            using (var fs = new FileStream(f, FileMode.Create, FileAccess.Write))
             {
                 using (var bw = new BinaryWriter(fs))
                 {
