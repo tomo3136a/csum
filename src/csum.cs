@@ -120,7 +120,13 @@ namespace Program
                 {
                     var ss = s.Split(new char[] { ':' });
                     var n = (ss.Length > 1) ? Int32.Parse("0" + ss[1]) : 8;
-                    switch (ss[0].ToLower())
+                    var k = ss[0];
+                    if (k.Length < 1) continue;
+                    var h = 0;
+                    if (k[k.Length - 1] == '1') { h = 1; k = k.Substring(0, k.Length - 1); }
+                    if (k[k.Length - 1] == '2') { h = 2; k = k.Substring(0, k.Length - 1); }
+                    n += 100 * h;
+                    switch (k.ToLower())
                     {
                         case "size": OutSizeFile = n; break;
                         case "count": OutCountFile = n; break;
@@ -198,14 +204,18 @@ namespace Program
         /// </summary>
         /// <param name="f"></param>
         /// <param name="v"></param>
-        /// <param name="sz"></param>
-        public void OutBinary(string f, long v, int sz)
+        /// <param name="opt"></param>
+        public void OutBinary(string f, long v, int opt)
         {
+            var h = opt / 100;
+            var n = opt % 100;
+            if (h == 1) v = ~v;
+            if (h == 2) v = -v;
             using (var fs = new FileStream(f, FileMode.Create, FileAccess.Write))
             {
                 using (var bw = new BinaryWriter(fs))
                 {
-                    switch (sz)
+                    switch (n)
                     {
                         case 1: bw.Write((char)(v & 0x0FF)); break;
                         case 2: bw.Write((short)(v & 0x0FFFF)); break;
