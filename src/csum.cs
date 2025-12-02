@@ -119,13 +119,28 @@ namespace Program
                 foreach (var s in dict["-out"].Split(new char[] { ',' }))
                 {
                     var ss = s.Split(new char[] { ':' });
-                    var n = (ss.Length > 1) ? Int32.Parse("0" + ss[1]) : 8;
+                    var n = 8;
+                    var o = false;
+                    if (ss.Length > 1)
+                    {
+                        var s1 = ss[1];
+                        if (s1.Length > 0)
+                        {
+                            if (s1[0] == '-')
+                            {
+                                o = true;
+                                s1 = s1.Substring(1);
+                            }
+                        }
+                        n = Int32.Parse("0" + s1);
+                    }
                     var k = ss[0];
                     if (k.Length < 1) continue;
                     var h = 0;
                     if (k[k.Length - 1] == '1') { h = 1; k = k.Substring(0, k.Length - 1); }
                     if (k[k.Length - 1] == '2') { h = 2; k = k.Substring(0, k.Length - 1); }
                     n += 100 * h;
+                    if (o) { n += 1000; }
                     switch (k.ToLower())
                     {
                         case "size": OutSizeFile = n; break;
@@ -207,21 +222,33 @@ namespace Program
         /// <param name="opt"></param>
         public void OutBinary(string f, long v, int opt)
         {
-            var h = opt / 100;
+            var o = opt / 1000;
+            var h = (opt % 1000) / 100;
             var n = opt % 100;
             if (h == 1) v = ~v;
             if (h == 2) v = -v;
             using (var fs = new FileStream(f, FileMode.Create, FileAccess.Write))
             {
+                byte[] ba = new byte[n];
+                if (o == 0)
+                {
+                    for (var i = 0; i < n; i++)
+                    {
+                        ba[i] = (byte)(0x0FF & v);
+                        v = v >> 8;
+                    }
+                }
+                else
+                {
+                    for (var i = n - 1; i >= 0; i--)
+                    {
+                        ba[i] = (byte)(0x0FF & v);
+                        v = v >> 8;
+                    }
+                }
                 using (var bw = new BinaryWriter(fs))
                 {
-                    switch (n)
-                    {
-                        case 1: bw.Write((char)(v & 0x0FF)); break;
-                        case 2: bw.Write((short)(v & 0x0FFFF)); break;
-                        case 4: bw.Write((int)(v & 0x0FFFFFFFF)); break;
-                        default: bw.Write(v); break;
-                    }
+                    bw.Write(ba);
                 }
             }
         }
