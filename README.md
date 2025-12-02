@@ -1,6 +1,6 @@
 # csum
 
-S-Record check sum calculator
+check sum calculator
 
 ## Usage
 
@@ -23,6 +23,15 @@ result:
     sum (hex)   : 00001609
 
     # 00:00:00.0352506
+
+### iput file format
+
+file format is supported S-Record, IHex and Binary.
+default S-Record.
+format selecting used command line argument.
+
+- `-type=ihex` IHex format
+- `-type=binary` Binary format
 
 ### ROM size specification
 
@@ -61,6 +70,38 @@ Example encoding name is 'utf-8', 'sjis', 'euc-jp', ...
 command:
 
     csum.exe -enc=utf-8 test.srec
+
+### output result file
+
+result to output file by command line argument.
+output value is `sum`, `count` and `size`.
+output file format is binary.
+
+```
+csum.exe -out=sum,count test.srec
+```
+
+#### specification
+
+exsample `sum`.
+same `count` and `size`.
+
+output file size:
+
+- `sum` is 8 byte size
+- `sum:1` is 1 byte size
+- `sum:2` is 2 byte size
+- `sum:4` is 4 byte size
+
+output value is 1st-, 2nd- .
+
+- `sum1` is 1st-
+- `sum2` is 2nd-
+
+output byte order:
+
+- `sum` is little
+- `sum:-` is big
 
 ## Build
 
